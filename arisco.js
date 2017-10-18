@@ -25,7 +25,7 @@ bot.onText(/\/raspberry (.+)/, (msg, match) => {
 			if(!adminUsers.includes(chatId)) return;
 			bot.sendMessage(chatId, 'Hold on, I\'m getting the roms...');
 
-			execute('cd /opt/roms && curl \' + config.dropboxFolderUrl + \' -O -J -L &> /dev/null;', function(error, stdout, stderr){
+			execute('cd /opt/roms && curl \'' + config.dropboxFolderUrl + '\' -O -J -L &> /dev/null;', function(error, stdout, stderr){
 				bot.sendMessage(chatId, 'I got the roms! Have fun');
 
 				execute('cd /opt/roms; unzip -n roms.zip; rm -rf roms.zip', (error1, stdout1, stderr1) => {
