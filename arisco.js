@@ -1,63 +1,63 @@
-const auth = require('./authtoken.json');
-const config = require('./config.json');
-const token = auth.token;
 const TelegramBot = require('node-telegram-bot-api');
-const bot = new TelegramBot(token, { polling: true });
-const exec = require('child_process').exec;
+const json = require('./config.json');
+var exec = require('child_process').exec;
 
-var allowedUsers = [112559128, 139443673, 11504381, 478389691];
-const adminUsers = [112559128, 139443673]
-const deniedCommands = ['rm', 'rmdir', 'rm -rf'];
-const selfies = ['assets/arisco1.jpeg', 'assets/arisco2.jpeg']
+const arisco = new TelegramBot(json.authorizationToken, { polling: true });
+const INDEX_COMMAND = 1;
 
 function execute(command, callback) {
     exec(command, function(error, stdout, stderr){ callback(error, stdout, stderr); });
 }
 
-bot.onText(/\/raspberry (.+)/, (msg, match) => {
+arisco.onText(/\/raspberry (.+)/, (msg, match) => {
 	const chatId = msg.chat.id;
-	const command = match[1];
+	const command = match[INDEX_COMMAND];
 
-	console.log(msg);
-
-	switch(command) {
-		case 'getroms':
-			if(!adminUsers.includes(chatId)) return;
-			bot.sendMessage(chatId, 'Hold on, I\'m getting the roms...');
-
-			execute('cd /opt/roms && curl \'' + config.dropboxFolderUrl + '\' -O -J -L &> /dev/null;', function(error, stdout, stderr){
-				bot.sendMessage(chatId, 'I got the roms! Have fun');
-
-				execute('cd /opt/roms; unzip -n roms.zip; rm -rf roms.zip', (error1, stdout1, stderr1) => {
-					console.log('error: ', error1);
-					console.log('stdout: ', stdout1);
-				});
-			});
-
-			break;
-
-		default:
-			if(deniedCommands.includes(command) && 
-				!adminUsers.includes(chatId)){
-				bot.sendMessage(chatId, 'You are not allowed to perform this command!', {parse_mode: 'HTML'});
+	var getCustomCommand = () => {
+		for(var i = 0; i < json.config.customCommands.length; i++) {
+			if(json.config.customCommands[i][command] !== undefined) {
+				return json.config.customCommands[i][command];
 			}
-			else{
-				execute(command, (error, stdout, stderr) => {
-					var out = stdout + stderr;
-					bot.sendMessage(chatId, '<code>' +  out + '</code>', {parse_mode: 'HTML'});
-				});
-			}
-			
+		}
+		return null;
+	}
+
+	var customCommand = getCustomCommand();
+
+	if(customCommand !== null) {
+		if(!json.config.adminUsers.includes(chatId)) { 
+			arisco.sendMessage(chatId, 'You are not allowed to perform this command!');
+			return;
+		}
+		
+		console.log('Executing custom command: ', customCommand);
+		execute(customCommand, function(error, stdout, stderr){
+			arisco.sendMessage(chatId, '<code>' + stdout + stderr + '</code>', { parse_mode: 'HTML' });
+		});
+	}
+	else {
+
+		if(json.config.deniedCommands.includes(command) && 
+			!json.config.adminUsers.includes(chatId)) {
+			arisco.sendMessage(chatId, 'You are not allowed to perform this command!');
+			return;
+		}
+
+		execute(command, function (error, stdout, stderr){
+			arisco.sendMessage(chatId, '<code>' + stdout + stderr + '</code>', { parse_mode: 'HTML' });
+		});
+
 	}
 });
 
-bot.onText(/\/selfie/, (msg, match) => {
+arisco.onText(/\/selfie/, (msg, match) => {
 	const chatId = msg.chat.id;
-	var index = Math.round(Math.random() * (selfies.length - 0) + 0);
-	bot.sendPhoto(chatId, selfies[index]);
+	var index = Math.round(Math.random() * (json.config.selfies.length - 0) + 0);
+
+	if( index <= json.config.selfies.length)
+		arisco.sendPhoto(chatId, json.config.selfies[index]);
 });
 
-bot.on('message', (msg) => {
-	const chatId = msg.chat.id;
+arisco.on('message', (msg) => {
 	console.log('Message received: ', msg);
 });

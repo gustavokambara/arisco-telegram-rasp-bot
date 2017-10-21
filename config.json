@@ -1,3 +1,13 @@
 {
-    "dropboxFolderUrl": "<YOUR PUBLIC LINK TO DROPBOX FOLDER GOES HERE>"
+	"authorizationToken" : "<YOUR TOKEN GOES HERE>",
+	"config" : {
+		"adminUsers" : [100000, 100001],
+		"selfies" : ["assets/arisco1.jpeg", "assets/arisco2.jpeg"],
+		"customCommands" : [
+			{ 
+				"myCustomCommand1" : "echo this is a custom command1"
+			}
+		],
+		"deniedCommands" : ["rm", "rmdir", "shutdown", "halt", "sudo"]
+	}
 }
